@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คำนวณราคาขายยา (พร้อมวิธีคิด)</title>
+    <style>
+        body {
+            font-family: 'Sarabun', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 25px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        h1, h2 {
+            color: #005f73;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .calculator-section {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        .input-group {
+            flex-grow: 1;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #0a9396;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            align-self: flex-end;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #005f73;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #eef7f7;
+        }
+        .highlight-row {
+            background-color: #fff3cd !important;
+            font-weight: bold;
+        }
+        .calculation-steps {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-left: 5px solid #17a2b8;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .calculation-steps h3 {
+            margin-top: 0;
+            color: #0077b6;
+        }
+        .calculation-steps p {
+            margin: 8px 0;
+            font-size: 1.1rem;
+        }
+        .calculation-steps .final-price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #d62828;
+            margin-top: 15px;
+        }
+        code {
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap">
+</head>
+<body>
+
+    <div class="container">
+        <h1>💊 โปรแกรมคำนวณราคาขายยา (รพ.รัฐ)</h1>
+
+        <div class="calculator-section">
+            <div class="input-group">
+                <label for="costPrice">กรอกราคาต้นทุนต่อหน่วย (บาท):</label>
+                <input type="number" id="costPrice" placeholder="เช่น 8 หรือ 150" step="0.01">
+            </div>
+            <button onclick="calculatePrice()">คำนวณราคา</button>
+        </div>
+        
+        <div id="result-container" style="display:none;">
+            <hr>
+            <h2>📝 สรุปและวิธีคิดคำนวณ</h2>
+            <div id="calculation-details" class="calculation-steps">
+                </div>
+        </div>
+
+        <hr>
+        <h2>📋 ตารางหลักเกณฑ์การคำนวณราคา</h2>
+        <table id="pricing-table">
+            <thead>
+                <tr>
+                    <th>ราคาต้นทุนต่อหน่วย (บาท)</th>
+                    <th>สูตรการคำนวณราคาขาย (บาท)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr data-min="0.01" data-max="0.20">
+                    <td>0.01 – 0.20</td>
+                    <td>0.50</td>
+                </tr>
+                <tr data-min="0.21" data-max="0.50">
+                    <td>0.21 – 0.50</td>
+                    <td>1.00</td>
+                </tr>
+                <tr data-min="0.51" data-max="1.00">
+                    <td>0.51 – 1.00</td>
+                    <td>1.50</td>
+                </tr>
+                <tr data-min="1.01" data-max="10.00">
+                    <td>1.01 – 10.00</td>
+                    <td>1.50 + (125% ของส่วนที่เกิน 1 บาท)</td>
+                </tr>
+                <tr data-min="10.01" data-max="100.00">
+                    <td>10.01 – 100.00</td>
+                    <td>13.00 + (120% ของส่วนที่เกิน 10 บาท)</td>
+                </tr>
+                <tr data-min="100.01" data-max="1000.00">
+                    <td>100.01 – 1,000.00</td>
+                    <td>126.00 + (115% ของส่วนที่เกิน 100 บาท)</td>
+                </tr>
+                <tr data-min="1000.01" data-max="Infinity">
+                    <td>เกิน 1,000.00</td>
+                    <td>1,146.00 + (110% ของส่วนที่เกิน 1,000 บาท)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function calculatePrice() {
+            const costInput = document.getElementById('costPrice');
+            const cost = parseFloat(costInput.value);
+            const resultContainer = document.getElementById('result-container');
+            const detailsContainer = document.getElementById('calculation-details');
+
+            // Reset
+            detailsContainer.innerHTML = '';
+            document.querySelectorAll('#pricing-table tr.highlight-row').forEach(row => {
+                row.classList.remove('highlight-row');
+            });
+
+            if (isNaN(cost) || cost <= 0) {
+                alert("กรุณาใส่ราคาต้นทุนเป็นตัวเลขที่ถูกต้อง");
+                resultContainer.style.display = 'none';
+                return;
+            }
+
+            let sellingPrice = 0;
+            let explanationHTML = `<h3>วิธีคิดสำหรับต้นทุน ${cost.toFixed(2)} บาท</h3>`;
+            let tier;
+
+            if (cost >= 0.01 && cost <= 0.20) {
+                sellingPrice = 0.50;
+                explanationHTML += `<p>1. ต้นทุนอยู่ในช่วง 0.01 - 0.20 บาท</p><p>2. กำหนดราคาขายคงที่ตามเกณฑ์</p>`;
+                tier = 0;
+            } else if (cost >= 0.21 && cost <= 0.50) {
+                sellingPrice = 1.00;
+                explanationHTML += `<p>1. ต้นทุนอยู่ในช่วง 0.21 - 0.50 บาท</p><p>2. กำหนดราคาขายคงที่ตามเกณฑ์</p>`;
+                tier = 1;
+            } else if (cost >= 0.51 && cost <= 1.00) {
+                sellingPrice = 1.50;
+                explanationHTML += `<p>1. ต้นทุนอยู่ในช่วง 0.51 - 1.00 บาท</p><p>2. กำหนดราคาขายคงที่ตามเกณฑ์</p>`;
+                tier = 2;
+            } else if (cost > 1 && cost <= 10) {
+                const excess = cost - 1;
+                const markup = 1.25 * excess;
+                sellingPrice = 1.50 + markup;
+                explanationHTML += `<p>1. ต้นทุนอยู่ในช่วง 1.01 - 10.00 บาท</p>
+                                   <p>2. หาส่วนที่เกิน 1 บาท: <code>${cost.toFixed(2)} - 1 = ${excess.toFixed(2)}</code></p>
+                                   <p>3. คิด 125% ของส่วนที่เกิน: <code>1.25 x ${excess.toFixed(2)} = ${markup.toFixed(2)}</code></p>
+                                   <p>4. นำไปบวกกับค่าฐาน: <code>1.50 + ${markup.toFixed(2)} = ${sellingPrice.toFixed(2)}</code></p>`;
+                tier = 3;
+            } else if (cost > 10 && cost <= 100) {
+                const excess = cost - 10;
+                const markup = 1.20 * excess;
+                sellingPrice = 13.00 + markup;
+                explanationHTML += `<p>1. ต้นทุนอยู่ในช่วง 10.01 - 100.00 บาท</p>
+                                   <p>2. หาส่วนที่เกิน 10 บาท: <code>${cost.toFixed(2)} - 10 = ${excess.toFixed(2)}</code></p>
+                                   <p>3. คิด 120% ของส่วนที่เกิน: <code>1.20 x ${excess.toFixed(2)} = ${markup.toFixed(2)}</code></p>
+                                   <p>4. นำไปบวกกับค่าฐาน: <code>13.00 + ${markup.toFixed(2)} = ${sellingPrice.toFixed(2)}</code></p>`;
+                tier = 4;
+            } else if (cost > 100 && cost <= 1000) {
+                const excess = cost - 100;
+                const markup = 1.15 * excess;
+                sellingPrice = 126.00 + markup;
+                explanationHTML += `<p>1. ต้นทุนอยู่ในช่วง 100.01 - 1,000.00 บาท</p>
+                                   <p>2. หาส่วนที่เกิน 100 บาท: <code>${cost.toFixed(2)} - 100 = ${excess.toFixed(2)}</code></p>
+                                   <p>3. คิด 115% ของส่วนที่เกิน: <code>1.15 x ${excess.toFixed(2)} = ${markup.toFixed(2)}</code></p>
+                                   <p>4. นำไปบวกกับค่าฐาน: <code>126.00 + ${markup.toFixed(2)} = ${sellingPrice.toFixed(2)}</code></p>`;
+                tier = 5;
+            } else if (cost > 1000) {
+                const excess = cost - 1000;
+                const markup = 1.10 * excess;
+                sellingPrice = 1146.00 + markup;
+                explanationHTML += `<p>1. ต้นทุนสูงกว่า 1,000.00 บาท</p>
+                                   <p>2. หาส่วนที่เกิน 1,000 บาท: <code>${cost.toFixed(2)} - 1000 = ${excess.toFixed(2)}</code></p>
+                                   <p>3. คิด 110% ของส่วนที่เกิน: <code>1.10 x ${excess.toFixed(2)} = ${markup.toFixed(2)}</code></p>
+                                   <p>4. นำไปบวกกับค่าฐาน: <code>1146.00 + ${markup.toFixed(2)} = ${sellingPrice.toFixed(2)}</code></p>`;
+                tier = 6;
+            }
+
+            // Highlight the correct row in the table
+            const tableRows = document.querySelectorAll('#pricing-table tbody tr');
+            if (tableRows[tier]) {
+                tableRows[tier].classList.add('highlight-row');
+            }
+
+            // Display the final result
+            explanationHTML += `<p class="final-price">ราคาขายคือ: ${sellingPrice.toFixed(2)} บาท</p>`;
+            detailsContainer.innerHTML = explanationHTML;
+            resultContainer.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
